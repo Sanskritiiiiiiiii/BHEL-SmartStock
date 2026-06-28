@@ -1,0 +1,18 @@
+{
+  "name": "mmis",
+  "version": "1.0.0",
+  "description": "Material Management & Inventory Management System",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "db:generate": "cd backend && npx prisma generate",
+    "db:migrate": "cd backend && npx prisma migrate dev --name init",
+    "db:seed": "cd backend && npx ts-node prisma/seed.ts",
+    "db:setup": "npm run db:generate && npm run db:migrate && npm run db:seed",
+    "setup": "npm run install:all && npm run db:setup"
+  }
+}

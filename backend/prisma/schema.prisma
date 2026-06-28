@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STORE_MANAGER
+  INVENTORY_OFFICER
+  PROCUREMENT_OFFICER
+  VENDOR
+}
+
+enum SRVStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SIVStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BidStatus {
+  OPEN
+  CLOSED
+  AWARDED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(INVENTORY_OFFICER)
+  vendorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  srvs      SRV[]
+  sivs      SIV[]
+  vendor    Supplier? @relation(fields: [vendorId], references: [id])
+
+  @@map("users")
+}
+
+model Material {
+  id           String   @id @default(cuid())
+  materialCode String   @unique
+  name         String
+  category     String
+  description  String?
+  unit         String
+  minimumStock Float    @default(0)
+  maximumStock Float    @default(0)
+  safetyBuffer Float    @default(0)
+  leadTime     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  inventory  Inventory?
+  srvItems   SRVItem[]
+  sivItems   SIVItem[]
+  forecasts  Forecast[]
+
+  @@map("materials")
+}
+
+model Inventory {
+  id           String   @id @default(cuid())
+  materialId   String   @unique
+  currentStock Float    @default(0)
+  lastUpdated  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("inventory")
+}
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  address     String?
+  rating      Float    @default(0)
+  totalBids   Int      @default(0)
+  wonBids     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  srvs        SRV[]
+  bids        SupplierBid[]
+
+  @@map("suppliers")
+}
+
+model SRV {
+  id          String    @id @default(cuid())
+  srvNumber   String    @unique
+  supplierId  String
+  receiptDate DateTime
+  status      SRVStatus @default(PENDING)
+  notes       String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  supplier  Supplier  @relation(fields: [supplierId], references: [id])
+  createdBy User      @relation(fields: [createdById], references: [id])
+  items     SRVItem[]
+
+  @@map("srv")
+}
+
+model SRVItem {
+  id         String @id @default(cuid())
+  srvId      String
+  materialId String
+  quantity   Float
+  unitPrice  Float  @default(0)
+
+  srv      SRV      @relation(fields: [srvId], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [materialId], references: [id])
+
+  @@map("srv_items")
+}
+
+model SIV {
+  id          String    @id @default(cuid())
+  sivNumber   String    @unique
+  department  String
+  issueDate   DateTime
+  status      SIVStatus @default(PENDING)
+  notes       String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy User      @relation(fields: [createdById], references: [id])
+  items     SIVItem[]
+
+  @@map("siv")
+}
+
+model SIVItem {
+  id         String @id @default(cuid())
+  sivId      String
+  materialId String
+  quantity   Float
+
+  siv      SIV      @relation(fields: [sivId], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [materialId], references: [id])
+
+  @@map("siv_items")
+}
+
+model Tender {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  materialId  String?
+  quantity    Float?
+  status      BidStatus @default(OPEN)
+  deadline    DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  bids SupplierBid[]
+
+  @@map("tenders")
+}
+
+model SupplierBid {
+  id          String   @id @default(cuid())
+  tenderId    String
+  supplierId  String
+  amount      Float
+  currency    String   @default("INR")
+  notes       String?
+  isWinner    Boolean  @default(false)
+  submittedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tender   Tender   @relation(fields: [tenderId], references: [id])
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@map("supplier_bids")
+}
+
+model Forecast {
+  id             String   @id @default(cuid())
+  materialId     String
+  alpha          Float
+  historicalData Json
+  forecastData   Json
+  period         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  material Material @relation(fields: [materialId], references: [id])
+
+  @@map("forecasts")
+}
