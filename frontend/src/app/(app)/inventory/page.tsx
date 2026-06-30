@@ -47,9 +47,9 @@ export default function InventoryPage() {
   }, [fetchInventory]);
 
   const getStockStatus = (current: number, minimum: number) => {
-    if (current === 0) return { label: 'Out of Stock', variant: 'danger' as const, color: 'text-red-600' };
-    if (current <= minimum) return { label: 'Low Stock', variant: 'warning' as const, color: 'text-yellow-600' };
-    return { label: 'Adequate', variant: 'success' as const, color: 'text-green-600' };
+    if (current === 0) return { label: 'Out of Stock', variant: 'danger' as const, color: 'text-red-600 dark:text-red-400' };
+    if (current <= minimum) return { label: 'Low Stock', variant: 'warning' as const, color: 'text-amber-600 dark:text-amber-400' };
+    return { label: 'Adequate', variant: 'success' as const, color: 'text-emerald-600 dark:text-emerald-400' };
   };
 
   const getStockPercent = (current: number, maximum: number) => {
@@ -81,10 +81,10 @@ export default function InventoryPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
-        <p className="text-sm text-gray-500 mt-1">Monitor stock levels and manage inventory</p>
+        <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Inventory Management</h1>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Monitor stock levels and manage inventory</p>
       </div>
 
       {/* Stats */}
@@ -100,22 +100,22 @@ export default function InventoryPage() {
         <CardContent className="py-3">
           <div className="flex gap-3 flex-wrap items-center">
             <div className="relative flex-1 min-w-48">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search materials..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
               />
             </div>
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
               {filterTabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => { setFilter(tab.key); setPage(1); }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                     filter === tab.key
-                      ? 'bg-white text-blue-600 shadow-sm'
+                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -163,14 +163,14 @@ export default function InventoryPage() {
                   return (
                     <TableRow key={inv.id}>
                       <TableCell>
-                        <span className="font-medium text-gray-800">{inv.material?.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{inv.material?.name}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
+                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">
                           {inv.material?.materialCode}
                         </span>
                       </TableCell>
-                      <TableCell className="text-gray-500">{inv.material?.category}</TableCell>
+                      <TableCell className="text-gray-500 dark:text-gray-500">{inv.material?.category}</TableCell>
                       <TableCell>
                         <span className={`font-bold ${status.color}`}>
                           {inv.currentStock} {inv.material?.unit}
@@ -189,13 +189,13 @@ export default function InventoryPage() {
                           <span className="text-xs text-gray-400 mt-0.5">{pct.toFixed(0)}%</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs text-gray-500">
+                      <TableCell className="text-xs text-gray-500 dark:text-gray-500">
                         {inv.material?.minimumStock} / {inv.material?.maximumStock}
                       </TableCell>
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-gray-400">{formatDate(inv.lastUpdated)}</TableCell>
+                      <TableCell className="text-xs text-gray-400 dark:text-gray-500">{formatDate(inv.lastUpdated)}</TableCell>
                       {canAdjust && (
                         <TableCell>
                           <Button
@@ -229,10 +229,10 @@ export default function InventoryPage() {
       >
         {adjustModal.item && (
           <form onSubmit={handleAdjust} className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="font-medium text-gray-800">{adjustModal.item.material?.name}</p>
+            <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3">
+              <p className="font-medium text-gray-800 dark:text-gray-200">{adjustModal.item.material?.name}</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                Current stock: <span className="font-semibold text-gray-700">{adjustModal.item.currentStock} {adjustModal.item.material?.unit}</span>
+                Current stock: <span className="font-semibold text-gray-700 dark:text-gray-300">{adjustModal.item.currentStock} {adjustModal.item.material?.unit}</span>
               </p>
             </div>
 
@@ -265,7 +265,7 @@ export default function InventoryPage() {
                 value={adjustForm.quantity}
                 onChange={(e) => setAdjustForm({ ...adjustForm, quantity: e.target.value })}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
               />
             </div>
 

@@ -93,10 +93,10 @@ export default function ForecastingPage() {
   ] : [];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Demand Forecasting</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Demand Forecasting</h1>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
           Single Exponential Smoothing: F<sub>t+1</sub> = α·D<sub>t</sub> + (1−α)·F<sub>t</sub>
         </p>
       </div>
@@ -114,7 +114,7 @@ export default function ForecastingPage() {
               <select
                 value={selectedMaterial}
                 onChange={(e) => setSelectedMaterial(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
               >
                 <option value="">Select material...</option>
                 {materials.map((m) => (
@@ -141,7 +141,7 @@ export default function ForecastingPage() {
                 <span>0 (Stable)</span>
                 <span>1 (Reactive)</span>
               </div>
-              <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-xs text-blue-700 dark:text-blue-400">
                 <strong>α = {alpha}</strong>: {alpha < 0.3 ? 'Slow adaptation, more weight on past forecasts' : alpha > 0.7 ? 'Fast adaptation, more weight on recent data' : 'Balanced between recent data and historical trend'}
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function ForecastingPage() {
             {/* Historical data input */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Historical Demand</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Historical Demand</label>
                 <Button type="button" variant="outline" size="sm" onClick={addDataPoint}>
                   <Plus size={13} />
                 </Button>
@@ -227,18 +227,18 @@ export default function ForecastingPage() {
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">6-Month Demand Prediction</h4>
                   <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                     {results.futureLabels.map((label, i) => (
-                      <div key={label} className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
+                      <div key={label} className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-2 text-center">
                         <p className="text-xs text-amber-600 font-medium">{label}</p>
                         <p className="text-base font-bold text-gray-800 mt-0.5">
                           {results.futureForecasts[i].toFixed(0)}
                         </p>
-                        <p className="text-xs text-gray-400">units</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">units</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
+                <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3 text-xs text-gray-500 dark:text-gray-500">
                   <strong>Formula:</strong> F<sub>t+1</sub> = {alpha}·D<sub>t</sub> + {(1 - alpha).toFixed(2)}·F<sub>t</sub>
                   {' '}| Alpha (α): <strong>{alpha}</strong>
                 </div>
@@ -271,13 +271,13 @@ export default function ForecastingPage() {
                     </div>
                     <p className="text-xs text-gray-400 font-mono mb-2">{f.material?.materialCode}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-blue-50 rounded p-2">
-                        <p className="text-gray-500">Alpha</p>
-                        <p className="font-bold text-blue-700">{f.alpha}</p>
+                      <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-2">
+                        <p className="text-gray-500 dark:text-gray-500">Alpha</p>
+                        <p className="font-bold text-blue-700 dark:text-blue-400">{f.alpha}</p>
                       </div>
-                      <div className="bg-amber-50 rounded p-2">
-                        <p className="text-gray-500">Next Month</p>
-                        <p className="font-bold text-amber-700">
+                      <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-2">
+                        <p className="text-gray-500 dark:text-gray-500">Next Month</p>
+                        <p className="font-bold text-amber-700 dark:text-amber-400">
                           {nextMonthForecast !== undefined ? nextMonthForecast.toFixed(0) : '—'}
                         </p>
                       </div>

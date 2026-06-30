@@ -1,461 +1,394 @@
 'use client';
 
-import { useState } from 'react';
-import { reportsApi } from '@/lib/api';
+import { useEffect, useState, useCallback } from 'react';
+import { sivApi, materialsApi } from '@/lib/api';
+import { SIV, Material } from '@/types';
+import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
-import { BarChart3, Package, Users, FileInput, FileOutput, TrendingUp, Download } from 'lucide-react';
+import { Plus, Search, Eye, CheckCircle, XCircle, FileOutput, Trash2 } from 'lucide-react';
 import {
-  Card, CardContent, CardHeader, CardTitle, Button, Badge, Spinner, StatusBadge,
-  Table, TableHead, TableBody, TableRow, TableHeader, TableCell
+  Card, CardContent, Button, StatusBadge,
+  Table, TableHead, TableBody, TableRow, TableHeader, TableCell,
+  Modal, Spinner, EmptyState, Pagination, ConfirmDialog
 } from '@/components/ui';
-import { formatDate, formatCurrency } from '@/lib/utils';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
-} from 'recharts';
+import { formatDate, DEPARTMENTS } from '@/lib/utils';
 
-type ReportType = 'inventory' | 'suppliers' | 'srv' | 'siv' | 'forecasts';
+interface SIVFormItem {
+  materialId: string;
+  quantity: string;
+}
 
-const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6'];
+export default function SIVPage() {
+  const { isRole } = useAuth();
+  const [sivs, setSIVs] = useState<SIV[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [detailModal, setDetailModal] = useState<{ open: boolean; siv: SIV | null }>({ open: false, siv: null });
+  const [createModal, setCreateModal] = useState(false);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [form, setForm] = useState({ department: '', issueDate: '', notes: '' });
+  const [items, setItems] = useState<SIVFormItem[]>([{ materialId: '', quantity: '' }]);
+  const [formLoading, setFormLoading] = useState(false);
+  const [actionConfirm, setActionConfirm] = useState<{ open: boolean; sivId: string; action: 'approve' | 'reject' } | null>(null);
 
-const reportTabs = [
-  { key: 'inventory' as ReportType, label: 'Inventory', icon: <Package size={15} /> },
-  { key: 'suppliers' as ReportType, label: 'Suppliers', icon: <Users size={15} /> },
-  { key: 'srv' as ReportType, label: 'SRV', icon: <FileInput size={15} /> },
-  { key: 'siv' as ReportType, label: 'SIV', icon: <FileOutput size={15} /> },
-  { key: 'forecasts' as ReportType, label: 'Forecast', icon: <TrendingUp size={15} /> },
-];
+  const canCreate = isRole('ADMIN', 'STORE_MANAGER', 'INVENTORY_OFFICER');
+  const canApprove = isRole('ADMIN', 'STORE_MANAGER');
 
-export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<ReportType>('inventory');
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [loaded, setLoaded] = useState<ReportType | null>(null);
-
-  const loadReport = async (type: ReportType) => {
-    setActiveTab(type);
-    if (loaded === type) return;
+  const fetchSIVs = useCallback(async () => {
     setLoading(true);
     try {
-      let res;
-      if (type === 'inventory') res = await reportsApi.getInventory();
-      else if (type === 'suppliers') res = await reportsApi.getSuppliers();
-      else if (type === 'srv') res = await reportsApi.getSRV();
-      else if (type === 'siv') res = await reportsApi.getSIV();
-      else res = await reportsApi.getForecasts();
-      setData(res.data.data);
-      setLoaded(type);
+      const res = await sivApi.getAll({ page, limit: 10, search, status: statusFilter });
+      setSIVs(res.data.data);
+      setTotalPages(res.data.pagination.totalPages);
     } catch {
-      toast.error('Failed to load report');
+      toast.error('Failed to load SIVs');
     } finally {
       setLoading(false);
     }
+  }, [page, search, statusFilter]);
+
+  useEffect(() => { fetchSIVs(); }, [fetchSIVs]);
+
+  useEffect(() => {
+    materialsApi.getAll({ limit: 200 }).then((r) => setMaterials(r.data.data));
+  }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (items.some((i) => !i.materialId || !i.quantity)) {
+      toast.error('Please fill in all item details');
+      return;
+    }
+    setFormLoading(true);
+    try {
+      await sivApi.create({ ...form, items });
+      toast.success('SIV created successfully');
+      setCreateModal(false);
+      resetForm();
+      fetchSIVs();
+    } catch (err: unknown) {
+      toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to create SIV');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
-  const renderInventoryReport = () => {
-    const d = data as {
-      stats: { total: number; lowStock: number; outOfStock: number; adequate: number; totalValue: number };
-      inventory: Array<{ material: { name: string; materialCode: string; category: string; unit: string; minimumStock: number }; currentStock: number; lastUpdated: string }>;
-    };
-    if (!d) return null;
-    const pieData = [
-      { name: 'Adequate', value: d.stats.adequate },
-      { name: 'Low Stock', value: d.stats.lowStock },
-      { name: 'Out of Stock', value: d.stats.outOfStock },
-    ];
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {[
-            { label: 'Total Items', value: d.stats.total, color: 'text-blue-600' },
-            { label: 'Adequate', value: d.stats.adequate, color: 'text-green-600' },
-            { label: 'Low Stock', value: d.stats.lowStock, color: 'text-yellow-600' },
-            { label: 'Out of Stock', value: d.stats.outOfStock, color: 'text-red-600' },
-            { label: 'Est. Value', value: formatCurrency(d.stats.totalValue), color: 'text-purple-600' },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500">{stat.label}</p>
-              <p className={`text-xl font-bold mt-0.5 ${stat.color}`}>{stat.value}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Stock Status Distribution</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value" nameKey="name">
-                  {pieData.map((_, i) => <Cell key={i} fill={['#22c55e', '#f59e0b', '#ef4444'][i]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Stock by Category</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={Object.entries(
-                  d.inventory.reduce((acc: Record<string, number>, inv) => {
-                    const cat = inv.material.category;
-                    acc[cat] = (acc[cat] || 0) + inv.currentStock;
-                    return acc;
-                  }, {})
-                ).map(([name, value]) => ({ name, value }))}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#3b82f6" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>Material</TableHeader>
-              <TableHeader>Code</TableHeader>
-              <TableHeader>Category</TableHeader>
-              <TableHeader>Current Stock</TableHeader>
-              <TableHeader>Min Stock</TableHeader>
-              <TableHeader>Status</TableHeader>
-              <TableHeader>Last Updated</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {d.inventory.map((inv, i) => {
-              const status = inv.currentStock === 0 ? 'danger' : inv.currentStock <= inv.material.minimumStock ? 'warning' : 'success';
-              return (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{inv.material.name}</TableCell>
-                  <TableCell><span className="font-mono text-xs">{inv.material.materialCode}</span></TableCell>
-                  <TableCell className="text-gray-500">{inv.material.category}</TableCell>
-                  <TableCell className="font-semibold">{inv.currentStock} {inv.material.unit}</TableCell>
-                  <TableCell className="text-gray-400">{inv.material.minimumStock}</TableCell>
-                  <TableCell>
-                    <Badge variant={status as 'danger' | 'warning' | 'success'}>
-                      {status === 'danger' ? 'Out of Stock' : status === 'warning' ? 'Low' : 'OK'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-gray-400 text-xs">{formatDate(inv.lastUpdated)}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    );
+  const handleAction = async () => {
+    if (!actionConfirm) return;
+    try {
+      await sivApi.updateStatus(actionConfirm.sivId, actionConfirm.action);
+      toast.success(`SIV ${actionConfirm.action === 'approve' ? 'approved' : 'rejected'} successfully`);
+      if (actionConfirm.action === 'approve') toast.info('Inventory has been updated');
+      fetchSIVs();
+      if (detailModal.open) setDetailModal({ open: false, siv: null });
+    } catch (err: unknown) {
+      toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Operation failed');
+    }
+    setActionConfirm(null);
   };
 
-  const renderSupplierReport = () => {
-    const suppliers = data as Array<{
-      name: string; email: string; rating: number; totalBids: number; wonBids: number;
-      winRate: string; totalBidAmount: number; totalSRVs: number; approvedSRVs: number;
-    }>;
-    if (!suppliers) return null;
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Win Rate Comparison</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={suppliers.map((s) => ({ name: s.name.split(' ')[0], rate: parseFloat(s.winRate) }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis unit="%" tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`${v}%`, 'Win Rate']} />
-                <Bar dataKey="rate" fill="#22c55e" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Total Bid Amounts (₹)</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={suppliers.map((s) => ({ name: s.name.split(' ')[0], amount: s.totalBidAmount }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [formatCurrency(Number(v)), 'Total Bids']} />
-                <Bar dataKey="amount" fill="#3b82f6" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>Supplier</TableHeader>
-              <TableHeader>Email</TableHeader>
-              <TableHeader>Rating</TableHeader>
-              <TableHeader>Total Bids</TableHeader>
-              <TableHeader>Won Bids</TableHeader>
-              <TableHeader>Win Rate</TableHeader>
-              <TableHeader>SRVs</TableHeader>
-              <TableHeader>Total Bid Value</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {suppliers.map((s, i) => (
-              <TableRow key={i}>
-                <TableCell className="font-semibold">{s.name}</TableCell>
-                <TableCell className="text-gray-500">{s.email}</TableCell>
-                <TableCell>
-                  <span className="text-yellow-500">{'★'.repeat(Math.round(s.rating))}</span>
-                  <span className="text-xs text-gray-400 ml-1">({s.rating})</span>
-                </TableCell>
-                <TableCell>{s.totalBids}</TableCell>
-                <TableCell>{s.wonBids}</TableCell>
-                <TableCell>
-                  <Badge variant={parseFloat(s.winRate) > 50 ? 'success' : 'warning'}>{s.winRate}%</Badge>
-                </TableCell>
-                <TableCell>{s.approvedSRVs}/{s.totalSRVs}</TableCell>
-                <TableCell className="font-medium">{formatCurrency(s.totalBidAmount)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
+  const resetForm = () => {
+    setForm({ department: '', issueDate: '', notes: '' });
+    setItems([{ materialId: '', quantity: '' }]);
   };
 
-  const renderSRVReport = () => {
-    const d = data as {
-      stats: { total: number; pending: number; approved: number; rejected: number };
-      srvs: Array<{ srvNumber: string; supplier: { name: string }; receiptDate: string; status: string; items: unknown[] }>;
-    };
-    if (!d) return null;
-    const pieData = [
-      { name: 'Approved', value: d.stats.approved },
-      { name: 'Pending', value: d.stats.pending },
-      { name: 'Rejected', value: d.stats.rejected },
-    ].filter((p) => p.value > 0);
-
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { label: 'Total SRVs', value: d.stats.total, color: 'text-blue-600' },
-            { label: 'Approved', value: d.stats.approved, color: 'text-green-600' },
-            { label: 'Pending', value: d.stats.pending, color: 'text-yellow-600' },
-            { label: 'Rejected', value: d.stats.rejected, color: 'text-red-600' },
-          ].map((s) => (
-            <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500">{s.label}</p>
-              <p className={`text-xl font-bold mt-0.5 ${s.color}`}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {pieData.length > 0 && (
-          <div className="w-64 mx-auto">
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" outerRadius={70} dataKey="value" nameKey="name">
-                  {pieData.map((_, i) => <Cell key={i} fill={['#22c55e', '#f59e0b', '#ef4444'][i]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>SRV Number</TableHeader>
-              <TableHeader>Supplier</TableHeader>
-              <TableHeader>Receipt Date</TableHeader>
-              <TableHeader>Items</TableHeader>
-              <TableHeader>Status</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {d.srvs.map((srv, i) => (
-              <TableRow key={i}>
-                <TableCell><span className="font-mono text-xs font-bold text-blue-700">{srv.srvNumber}</span></TableCell>
-                <TableCell className="font-medium">{srv.supplier?.name}</TableCell>
-                <TableCell className="text-gray-500">{formatDate(srv.receiptDate)}</TableCell>
-                <TableCell><Badge variant="info">{(srv.items as unknown[]).length} items</Badge></TableCell>
-                <TableCell><StatusBadge status={srv.status} /></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
+  const addItem = () => setItems([...items, { materialId: '', quantity: '' }]);
+  const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i));
+  const updateItem = (i: number, field: keyof SIVFormItem, val: string) => {
+    setItems(items.map((item, idx) => idx === i ? { ...item, [field]: val } : item));
   };
 
-  const renderSIVReport = () => {
-    const d = data as {
-      stats: { total: number; pending: number; approved: number; rejected: number };
-      departmentBreakdown: Array<{ name: string; count: number }>;
-      sivs: Array<{ sivNumber: string; department: string; issueDate: string; status: string; items: unknown[] }>;
-    };
-    if (!d) return null;
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { label: 'Total SIVs', value: d.stats.total, color: 'text-purple-600' },
-            { label: 'Approved', value: d.stats.approved, color: 'text-green-600' },
-            { label: 'Pending', value: d.stats.pending, color: 'text-yellow-600' },
-            { label: 'Rejected', value: d.stats.rejected, color: 'text-red-600' },
-          ].map((s) => (
-            <div key={s.label} className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-xs text-gray-500">{s.label}</p>
-              <p className={`text-xl font-bold mt-0.5 ${s.color}`}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {d.departmentBreakdown.length > 0 && (
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">SIVs by Department</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={d.departmentBreakdown}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#8b5cf6" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>SIV Number</TableHeader>
-              <TableHeader>Department</TableHeader>
-              <TableHeader>Issue Date</TableHeader>
-              <TableHeader>Items</TableHeader>
-              <TableHeader>Status</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {d.sivs.map((siv, i) => (
-              <TableRow key={i}>
-                <TableCell><span className="font-mono text-xs font-bold text-purple-700">{siv.sivNumber}</span></TableCell>
-                <TableCell className="font-medium">{siv.department}</TableCell>
-                <TableCell className="text-gray-500">{formatDate(siv.issueDate)}</TableCell>
-                <TableCell><Badge variant="info">{(siv.items as unknown[]).length} items</Badge></TableCell>
-                <TableCell><StatusBadge status={siv.status} /></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  };
-
-  const renderForecastReport = () => {
-    const forecasts = data as Array<{
-      material: { name: string; materialCode: string; category: string };
-      alpha: number;
-      forecastData: { future: number[]; futureLabels: string[] };
-      updatedAt: string;
-    }>;
-    if (!forecasts) return null;
-    return (
-      <div className="space-y-4">
-        {forecasts.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">No forecasts saved yet. Use the Forecasting module to generate forecasts.</p>
-        ) : (
-          forecasts.map((f, i) => {
-            const future = f.forecastData?.future || [];
-            return (
-              <Card key={i}>
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <span className="font-semibold text-gray-800">{f.material?.name}</span>
-                      <span className="text-xs text-gray-400 ml-2 font-mono">{f.material?.materialCode}</span>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      α = {f.alpha} | Updated {formatDate(f.updatedAt)}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                    {(f.forecastData?.futureLabels || []).map((label: string, j: number) => (
-                      <div key={j} className="bg-amber-50 border border-amber-200 rounded p-2 text-center">
-                        <p className="text-xs text-amber-600">{label}</p>
-                        <p className="font-bold text-gray-800">{future[j]?.toFixed(0) ?? '—'}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
-    );
+  // Get current stock for a material
+  const getMaterialStock = (materialId: string) => {
+    const m = materials.find((mat) => mat.id === materialId);
+    return m ? (m.currentStock ?? m.inventory?.currentStock ?? 0) : 0;
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-        <p className="text-sm text-gray-500 mt-1">Comprehensive reporting dashboard</p>
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Store Issue Vouchers</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Manage material issues to departments</p>
+        </div>
+        {canCreate && (
+          <Button onClick={() => { setCreateModal(true); resetForm(); }}>
+            <Plus size={16} /> New SIV
+          </Button>
+        )}
       </div>
 
-      {/* Report Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {reportTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => loadReport(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
-              activeTab === tab.key
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'
-            }`}
-          >
-            {tab.icon}
-            {tab.label} Report
-          </button>
-        ))}
-      </div>
-
-      {/* Report Content */}
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 size={16} className="text-blue-600" />
-              {reportTabs.find((t) => t.key === activeTab)?.label} Report
-            </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => loadReport(activeTab)}>
-              <Download size={14} /> Refresh
-            </Button>
+        <CardContent className="py-3">
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-48">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Search by SIV number or department..."
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
+            >
+              <option value="">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
           </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-16"><Spinner className="h-6 w-6" /></div>
-          ) : !data || loaded !== activeTab ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <BarChart3 size={40} className="text-gray-300 mb-4" />
-              <p className="text-sm text-gray-500">Click a report tab above to load data</p>
-            </div>
-          ) : (
-            <div>
-              {activeTab === 'inventory' && renderInventoryReport()}
-              {activeTab === 'suppliers' && renderSupplierReport()}
-              {activeTab === 'srv' && renderSRVReport()}
-              {activeTab === 'siv' && renderSIVReport()}
-              {activeTab === 'forecasts' && renderForecastReport()}
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {/* Table */}
+      <Card>
+        {loading ? (
+          <div className="flex items-center justify-center py-16"><Spinner className="h-6 w-6" /></div>
+        ) : sivs.length === 0 ? (
+          <EmptyState title="No SIVs found" description="Create a new SIV to issue materials" icon={<FileOutput size={40} />} />
+        ) : (
+          <>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>SIV Number</TableHeader>
+                  <TableHeader>Department</TableHeader>
+                  <TableHeader>Issue Date</TableHeader>
+                  <TableHeader>Items</TableHeader>
+                  <TableHeader>Created By</TableHeader>
+                  <TableHeader>Status</TableHeader>
+                  <TableHeader>Actions</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sivs.map((siv) => (
+                  <TableRow key={siv.id}>
+                    <TableCell>
+                      <span className="font-mono text-xs font-semibold text-purple-700 dark:text-purple-400">{siv.sivNumber}</span>
+                    </TableCell>
+                    <TableCell className="font-medium">{siv.department}</TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-500">{formatDate(siv.issueDate)}</TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 px-2 py-0.5 rounded-full font-medium">
+                        {siv.items.length} item{siv.items.length !== 1 ? 's' : ''}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-500">{siv.createdBy?.name}</TableCell>
+                    <TableCell><StatusBadge status={siv.status} /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setDetailModal({ open: true, siv })}>
+                          <Eye size={14} />
+                        </Button>
+                        {canApprove && siv.status === 'PENDING' && (
+                          <>
+                            <Button
+                              variant="ghost" size="icon"
+                              className="text-green-500 hover:text-green-700 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                              onClick={() => setActionConfirm({ open: true, sivId: siv.id, action: 'approve' })}
+                            >
+                              <CheckCircle size={14} />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon"
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                              onClick={() => setActionConfirm({ open: true, sivId: siv.id, action: 'reject' })}
+                            >
+                              <XCircle size={14} />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </>
+        )}
+      </Card>
+
+      {/* Detail Modal */}
+      <Modal open={detailModal.open} onClose={() => setDetailModal({ open: false, siv: null })} title="SIV Details" size="lg">
+        {detailModal.siv && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 text-sm">
+              <div><span className="text-gray-500 dark:text-gray-500">SIV Number:</span> <span className="font-mono font-bold text-purple-700 ml-2">{detailModal.siv.sivNumber}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Status:</span> <span className="ml-2"><StatusBadge status={detailModal.siv.status} /></span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Department:</span> <span className="font-medium ml-2">{detailModal.siv.department}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Issue Date:</span> <span className="ml-2">{formatDate(detailModal.siv.issueDate)}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Created By:</span> <span className="ml-2">{detailModal.siv.createdBy?.name}</span></div>
+              {detailModal.siv.notes && <div className="col-span-2"><span className="text-gray-500 dark:text-gray-500">Notes:</span> <span className="ml-2">{detailModal.siv.notes}</span></div>}
+            </div>
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Items</h4>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Material</TableHeader>
+                    <TableHeader>Code</TableHeader>
+                    <TableHeader>Quantity</TableHeader>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {detailModal.siv.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.material?.name}</TableCell>
+                      <TableCell><span className="font-mono text-xs">{item.material?.materialCode}</span></TableCell>
+                      <TableCell>{item.quantity} {item.material?.unit}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {canApprove && detailModal.siv.status === 'PENDING' && (
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="default" className="flex-1"
+                  onClick={() => setActionConfirm({ open: true, sivId: detailModal.siv!.id, action: 'approve' })}
+                >
+                  <CheckCircle size={16} /> Approve & Deduct Stock
+                </Button>
+                <Button
+                  variant="destructive" className="flex-1"
+                  onClick={() => setActionConfirm({ open: true, sivId: detailModal.siv!.id, action: 'reject' })}
+                >
+                  <XCircle size={16} /> Reject SIV
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Create SIV Modal */}
+      <Modal open={createModal} onClose={() => setCreateModal(false)} title="Create New SIV" size="xl">
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department *</label>
+              <select
+                value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value })}
+                required
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
+              >
+                <option value="">Select department...</option>
+                {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Issue Date *</label>
+              <input
+                type="date"
+                value={form.issueDate}
+                onChange={(e) => setForm({ ...form, issueDate: e.target.value })}
+                required
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2}
+              placeholder="Optional notes..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600 resize-none"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Items *</label>
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus size={14} /> Add Item
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {items.map((item, i) => {
+                const stock = getMaterialStock(item.materialId);
+                return (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center bg-gray-50 dark:bg-gray-800/60 p-2 rounded-xl">
+                    <div className="col-span-7">
+                      <select
+                        value={item.materialId}
+                        onChange={(e) => updateItem(i, 'materialId', e.target.value)}
+                        required
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      >
+                        <option value="">Select material...</option>
+                        {materials.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name} ({m.materialCode}) — Stock: {m.currentStock ?? 0}
+                          </option>
+                        ))}
+                      </select>
+                      {item.materialId && (
+                        <p className="text-xs text-gray-400 mt-0.5">Available: {stock}</p>
+                      )}
+                    </div>
+                    <div className="col-span-4">
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        max={stock || undefined}
+                        value={item.quantity}
+                        onChange={(e) => updateItem(i, 'quantity', e.target.value)}
+                        placeholder="Quantity"
+                        required
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center">
+                      {items.length > 1 && (
+                        <button type="button" onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600 p-0.5">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => setCreateModal(false)}>Cancel</Button>
+            <Button type="submit" disabled={formLoading}>
+              {formLoading ? 'Creating...' : 'Create SIV'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!actionConfirm?.open}
+        onClose={() => setActionConfirm(null)}
+        onConfirm={handleAction}
+        title={actionConfirm?.action === 'approve' ? 'Approve SIV' : 'Reject SIV'}
+        message={
+          actionConfirm?.action === 'approve'
+            ? 'Approving this SIV will deduct the issued quantities from inventory.'
+            : 'Are you sure you want to reject this SIV?'
+        }
+        confirmLabel={actionConfirm?.action === 'approve' ? 'Approve' : 'Reject'}
+        variant={actionConfirm?.action === 'reject' ? 'danger' : 'default'}
+      />
     </div>
   );
 }

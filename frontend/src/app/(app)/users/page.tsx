@@ -80,11 +80,11 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage system users and their roles</p>
+          <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">User Management</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Manage system users and their roles</p>
         </div>
         <Button onClick={() => setModalOpen(true)}>
           <Plus size={16} /> Add User
@@ -118,7 +118,7 @@ export default function UsersPage() {
                       <span className="font-medium">{u.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-gray-500">{u.email}</TableCell>
+                  <TableCell className="text-gray-500 dark:text-gray-500">{u.email}</TableCell>
                   <TableCell>
                     <Badge variant={roleColors[u.role] || 'default'}>
                       {u.role.replace(/_/g, ' ')}
@@ -142,22 +142,22 @@ export default function UsersPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
             <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
             <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, vendorId: '' })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white">
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600">
               {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           </div>
@@ -165,7 +165,7 @@ export default function UsersPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Linked Supplier *</label>
               <select value={form.vendorId} onChange={(e) => setForm({ ...form, vendorId: e.target.value })} required={form.role === 'VENDOR'}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white">
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600">
                 <option value="">Select supplier...</option>
                 {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>

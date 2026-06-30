@@ -94,7 +94,7 @@ export default function SuppliersPage() {
         <Star
           key={star}
           size={13}
-          className={star <= Math.round(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200 fill-gray-200'}
+          className={star <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-700 fill-gray-200 dark:fill-gray-700'}
         />
       ))}
       <span className="text-xs text-gray-500 ml-1">{rating.toFixed(1)}</span>
@@ -102,11 +102,11 @@ export default function SuppliersPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage supplier information and performance</p>
+          <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Suppliers</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Manage supplier information and performance</p>
         </div>
         {canManage && (
           <Button onClick={openCreate}>
@@ -118,12 +118,12 @@ export default function SuppliersPage() {
       <Card>
         <CardContent className="py-3">
           <div className="relative max-w-sm">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search suppliers..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
             />
           </div>
         </CardContent>
@@ -153,17 +153,17 @@ export default function SuppliersPage() {
                   <TableRow key={s.id}>
                     <TableCell>
                       <div>
-                        <p className="font-semibold text-gray-800">{s.name}</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{s.name}</p>
                         {s.address && <p className="text-xs text-gray-400 truncate max-w-48">{s.address}</p>}
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-600">{s.email}</TableCell>
-                    <TableCell className="text-gray-500">{s.phone || '—'}</TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-500">{s.email}</TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-500">{s.phone || '—'}</TableCell>
                     <TableCell>{renderStars(s.rating)}</TableCell>
                     <TableCell>
                       <span className="text-xs">
-                        <span className="font-semibold text-gray-800">{s.wonBids}</span>
-                        <span className="text-gray-400"> / {s.totalBids}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">{s.wonBids}</span>
+                        <span className="text-gray-400 dark:text-gray-500"> / {s.totalBids}</span>
                       </span>
                     </TableCell>
                     <TableCell>
@@ -180,7 +180,7 @@ export default function SuppliersPage() {
                           {canDelete && (
                             <Button
                               variant="ghost" size="icon"
-                              className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                               onClick={() => setDeleteId(s.id)}
                             >
                               <Trash2 size={14} />
@@ -203,22 +203,22 @@ export default function SuppliersPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
             <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
             <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600 resize-none" />
           </div>
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>

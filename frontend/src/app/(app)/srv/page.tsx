@@ -104,11 +104,11 @@ export default function SRVPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Store Receipt Vouchers</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage material receipts from suppliers</p>
+          <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Store Receipt Vouchers</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Manage material receipts from suppliers</p>
         </div>
         {canCreate && (
           <Button onClick={() => { setCreateModal(true); resetForm(); }}>
@@ -122,18 +122,18 @@ export default function SRVPage() {
         <CardContent className="py-3">
           <div className="flex gap-3 flex-wrap">
             <div className="relative flex-1 min-w-48">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search by SRV number or supplier..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
             >
               <option value="">All Statuses</option>
               <option value="PENDING">Pending</option>
@@ -168,16 +168,16 @@ export default function SRVPage() {
                 {srvs.map((srv) => (
                   <TableRow key={srv.id}>
                     <TableCell>
-                      <span className="font-mono text-xs font-semibold text-blue-700">{srv.srvNumber}</span>
+                      <span className="font-mono text-xs font-semibold text-blue-700 dark:text-blue-400">{srv.srvNumber}</span>
                     </TableCell>
                     <TableCell className="font-medium">{srv.supplier?.name}</TableCell>
-                    <TableCell className="text-gray-500">{formatDate(srv.receiptDate)}</TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-500">{formatDate(srv.receiptDate)}</TableCell>
                     <TableCell>
-                      <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-xs bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">
                         {srv.items.length} item{srv.items.length !== 1 ? 's' : ''}
                       </span>
                     </TableCell>
-                    <TableCell className="text-gray-500">{srv.createdBy?.name}</TableCell>
+                    <TableCell className="text-gray-500 dark:text-gray-500">{srv.createdBy?.name}</TableCell>
                     <TableCell><StatusBadge status={srv.status} /></TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -188,14 +188,14 @@ export default function SRVPage() {
                           <>
                             <Button
                               variant="ghost" size="icon"
-                              className="text-green-500 hover:text-green-700 hover:bg-green-50"
+                              className="text-green-500 hover:text-green-700 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
                               onClick={() => setActionConfirm({ open: true, srvId: srv.id, action: 'approve' })}
                             >
                               <CheckCircle size={14} />
                             </Button>
                             <Button
                               variant="ghost" size="icon"
-                              className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
                               onClick={() => setActionConfirm({ open: true, srvId: srv.id, action: 'reject' })}
                             >
                               <XCircle size={14} />
@@ -217,13 +217,13 @@ export default function SRVPage() {
       <Modal open={detailModal.open} onClose={() => setDetailModal({ open: false, srv: null })} title="SRV Details" size="lg">
         {detailModal.srv && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-lg p-4 text-sm">
-              <div><span className="text-gray-500">SRV Number:</span> <span className="font-mono font-bold text-blue-700 ml-2">{detailModal.srv.srvNumber}</span></div>
-              <div><span className="text-gray-500">Status:</span> <span className="ml-2"><StatusBadge status={detailModal.srv.status} /></span></div>
-              <div><span className="text-gray-500">Supplier:</span> <span className="font-medium ml-2">{detailModal.srv.supplier?.name}</span></div>
-              <div><span className="text-gray-500">Receipt Date:</span> <span className="ml-2">{formatDate(detailModal.srv.receiptDate)}</span></div>
-              <div><span className="text-gray-500">Created By:</span> <span className="ml-2">{detailModal.srv.createdBy?.name}</span></div>
-              {detailModal.srv.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span> <span className="ml-2">{detailModal.srv.notes}</span></div>}
+            <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 text-sm">
+              <div><span className="text-gray-500 dark:text-gray-500">SRV Number:</span> <span className="font-mono font-bold text-blue-700 ml-2">{detailModal.srv.srvNumber}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Status:</span> <span className="ml-2"><StatusBadge status={detailModal.srv.status} /></span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Supplier:</span> <span className="font-medium ml-2">{detailModal.srv.supplier?.name}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Receipt Date:</span> <span className="ml-2">{formatDate(detailModal.srv.receiptDate)}</span></div>
+              <div><span className="text-gray-500 dark:text-gray-500">Created By:</span> <span className="ml-2">{detailModal.srv.createdBy?.name}</span></div>
+              {detailModal.srv.notes && <div className="col-span-2"><span className="text-gray-500 dark:text-gray-500">Notes:</span> <span className="ml-2">{detailModal.srv.notes}</span></div>}
             </div>
 
             <div>
@@ -275,14 +275,14 @@ export default function SRVPage() {
       {/* Create SRV Modal */}
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="Create New SRV" size="xl">
         <form onSubmit={handleCreate} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Supplier *</label>
               <select
                 value={form.supplierId}
                 onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
               >
                 <option value="">Select supplier...</option>
                 {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -295,7 +295,7 @@ export default function SRVPage() {
                 value={form.receiptDate}
                 onChange={(e) => setForm({ ...form, receiptDate: e.target.value })}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600"
               />
             </div>
           </div>
@@ -307,26 +307,26 @@ export default function SRVPage() {
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={2}
               placeholder="Optional notes..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600 resize-none"
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-700">Items *</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Items *</label>
               <Button type="button" variant="outline" size="sm" onClick={addItem}>
                 <Plus size={14} /> Add Item
               </Button>
             </div>
             <div className="space-y-2">
               {items.map((item, i) => (
-                <div key={i} className="grid grid-cols-12 gap-2 items-center bg-gray-50 p-2 rounded-lg">
+                <div key={i} className="grid grid-cols-12 gap-2 items-center bg-gray-50 dark:bg-gray-800/60 p-2 rounded-xl">
                   <div className="col-span-5">
                     <select
                       value={item.materialId}
                       onChange={(e) => updateItem(i, 'materialId', e.target.value)}
                       required
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500 bg-white"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     >
                       <option value="">Select material...</option>
                       {materials.map((m) => (

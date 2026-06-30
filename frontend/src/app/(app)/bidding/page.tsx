@@ -104,11 +104,11 @@ export default function BiddingPage() {
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 lg:p-6 space-y-5 max-w-screen-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Supplier Bidding Desk</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">Supplier Bidding Desk</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
             {isVendor ? 'View open tenders and submit your quotations' : 'Manage tenders and compare supplier bids'}
           </p>
         </div>
@@ -120,13 +120,13 @@ export default function BiddingPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
         {[{ key: '', label: 'All' }, { key: 'OPEN', label: 'Open' }, { key: 'AWARDED', label: 'Awarded' }, { key: 'CLOSED', label: 'Closed' }].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setStatusFilter(tab.key)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-              statusFilter === tab.key ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              statusFilter === tab.key ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             {tab.label}
@@ -166,7 +166,7 @@ export default function BiddingPage() {
                       <span>Deadline: <span className={`font-medium ${isExpired && tender.status === 'OPEN' ? 'text-red-600' : 'text-gray-700'}`}>{formatDate(tender.deadline)}</span></span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 px-2 py-0.5 rounded">{tender.bids.length} bid{tender.bids.length !== 1 ? 's' : ''}</span>
+                      <span className="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-lg">{tender.bids.length} bid{tender.bids.length !== 1 ? 's' : ''}</span>
                       {lowestBid !== null && (
                         <span className="text-green-600 font-medium">Lowest: {formatINR(lowestBid)}</span>
                       )}
@@ -207,25 +207,25 @@ export default function BiddingPage() {
       <Modal open={detailModal.open} onClose={() => setDetailModal({ open: false, tender: null })} title="Tender Details" size="xl">
         {detailModal.tender && (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+            <div className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Title:</span>
+                <span className="text-gray-500 dark:text-gray-500">Title:</span>
                 <span className="font-semibold">{detailModal.tender.title}</span>
               </div>
               {detailModal.tender.description && (
-                <div><span className="text-gray-500">Description:</span> <span className="ml-2">{detailModal.tender.description}</span></div>
+                <div><span className="text-gray-500 dark:text-gray-500">Description:</span> <span className="ml-2">{detailModal.tender.description}</span></div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-500">Status:</span>
+                <span className="text-gray-500 dark:text-gray-500">Status:</span>
                 <StatusBadge status={detailModal.tender.status} />
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Deadline:</span>
+                <span className="text-gray-500 dark:text-gray-500">Deadline:</span>
                 <span>{formatDate(detailModal.tender.deadline)}</span>
               </div>
               {detailModal.tender.quantity && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Required Qty:</span>
+                  <span className="text-gray-500 dark:text-gray-500">Required Qty:</span>
                   <span className="font-medium">{detailModal.tender.quantity}</span>
                 </div>
               )}
@@ -253,14 +253,14 @@ export default function BiddingPage() {
                     {detailModal.tender.bids
                       .sort((a, b) => a.amount - b.amount)
                       .map((bid, idx) => (
-                        <TableRow key={bid.id} className={bid.isWinner ? 'bg-green-50' : ''}>
+                        <TableRow key={bid.id} className={bid.isWinner ? 'bg-emerald-50 dark:bg-emerald-500/10' : ''}>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               {idx === 0 && <span className="text-xs text-green-600 font-bold">LOWEST</span>}
                               <span className="font-medium">{bid.supplier?.name}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="font-bold text-gray-800">{formatINR(bid.amount)}</TableCell>
+                          <TableCell className="font-bold text-gray-800 dark:text-gray-200">{formatINR(bid.amount)}</TableCell>
                           <TableCell className="text-gray-400 text-xs">{formatDate(bid.submittedAt)}</TableCell>
                           <TableCell className="text-gray-500 text-xs">{bid.notes || '—'}</TableCell>
                           <TableCell>
@@ -298,19 +298,19 @@ export default function BiddingPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
             <input value={tenderForm.title} onChange={(e) => setTenderForm({ ...tenderForm, title: e.target.value })}
               required placeholder="e.g. Stainless Steel Supply Q1 2025"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea value={tenderForm.description} onChange={(e) => setTenderForm({ ...tenderForm, description: e.target.value })}
               rows={3} placeholder="Detailed requirements..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600 resize-none" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Material (Optional)</label>
               <select value={tenderForm.materialId} onChange={(e) => setTenderForm({ ...tenderForm, materialId: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white">
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600">
                 <option value="">None</option>
                 {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
               </select>
@@ -319,14 +319,14 @@ export default function BiddingPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Required Qty</label>
               <input type="number" min="0" value={tenderForm.quantity} onChange={(e) => setTenderForm({ ...tenderForm, quantity: e.target.value })}
                 placeholder="0"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
             <input type="date" value={tenderForm.deadline} onChange={(e) => setTenderForm({ ...tenderForm, deadline: e.target.value })}
               required min={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setCreateModal(false)}>Cancel</Button>
@@ -338,20 +338,20 @@ export default function BiddingPage() {
       {/* Submit Bid Modal */}
       <Modal open={bidModal.open} onClose={() => setBidModal({ open: false, tenderId: '' })} title="Submit Quotation" size="sm">
         <form onSubmit={handleSubmitBid} className="space-y-4">
-          <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
+          <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-400">
             All amounts in Indian Rupees (INR ₹)
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bid Amount (₹) *</label>
             <input type="number" min="1" step="0.01" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)}
               required placeholder="Enter your total bid amount"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea value={bidNotes} onChange={(e) => setBidNotes(e.target.value)} rows={3}
               placeholder="Delivery terms, conditions, etc."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none" />
+              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800/60 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-blue-500/40 focus:border-gray-300 dark:focus:border-blue-600 resize-none" />
           </div>
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setBidModal({ open: false, tenderId: '' })}>Cancel</Button>
