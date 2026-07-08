@@ -270,12 +270,20 @@ export default function BiddingPage() {
                               <Badge variant="default">Pending</Badge>
                             )}
                           </TableCell>
-                          {isManager && detailModal.tender.status === 'OPEN' && (
+                          {isManager && detailModal.tender?.status === 'OPEN' && (
                             <TableCell>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setWinnerConfirm({ open: true, tenderId: detailModal.tender!.id, bidId: bid.id })}
+                                onClick={() => {
+                                    if (!detailModal.tender) return;
+
+                                    setWinnerConfirm({
+                                      open: true,
+                                      tenderId: detailModal.tender.id,
+                                      bidId: bid.id,
+                                    });
+                                  }}
                               >
                                 <Trophy size={13} /> Select
                               </Button>
