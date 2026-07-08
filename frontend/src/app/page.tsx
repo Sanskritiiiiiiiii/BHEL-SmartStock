@@ -62,7 +62,7 @@ export default function DashboardPage() {
         <div className="relative">
           <p className="text-blue-100 text-sm font-medium">Good day 👋</p>
           <h1 className="text-xl lg:text-2xl font-bold mt-0.5">Material Management Dashboard</h1>
-          <p className="text-blue-200 text-sm mt-1">Here's an overview of your inventory and operations</p>
+          <p className="text-blue-200 text-sm mt-1">Here&apos;s an overview of your inventory and operations</p>
         </div>
       </div>
 
